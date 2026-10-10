@@ -1,16 +1,28 @@
 import requests, json
 
 def get_country_info(country):
+    '''
+    Fetches information about a country from the REST Countries API.
+    
+    Parameters:
+    country (str): The name of the country to fetch information for.
+    
+    Returns:
+    dict: A dictionary containing information about the country, or an error message if the country is not found.
+    
+    '''
+
     url = 'https://api.restcountries.com/countries/v5'
     params = {"q": country}
     response = requests.get(url, params=params, headers={'Authorization': 'Bearer rc_live_287ae90a8f41440ebe3a8980e3b4ac73'})
-    print(f"Request URL: {response.url}")
     if response.status_code != 200:
         print("Error fetching data from API")
         exit()
     elif response.status_code == 200:
         print("Data fetched successfully")
     country_data = response.json()
+    print(response.url)
+    print(json.dumps(country_data, indent=4))
     if not country_data["data"]["objects"]:
         return {"Error": "Country not found"}
     country_info = country_data["data"]["objects"][0]
@@ -42,9 +54,20 @@ def display_country_info(country_info):
     print(f"Languages: {', '.join(country_info['Languages'])}")
 
 def compare_countries(country1, country2):
+    '''
+    Compares two countries based on their population and area.
+    
+    parameters:
+    country1 (str): The name of the first country to compare.
+    country2 (str): The name of the second country to compare.
+    
+    Returns:
+    None: Prints the comparison results to the console.
+    
+    '''
+
     country1_info = get_country_info(country1)
     country2_info = get_country_info(country2)
-    print(type(country1_info))
     if "Error" in country1_info:
         print(country1_info["Error"])
         return
@@ -83,6 +106,29 @@ def compare_countries(country1, country2):
     else:
         print(f"\nBoth countries have the same area.")
 
+def get_african_countries():
+    '''
+    Fetches a list of African countries from the REST Countries API.
+    
+    Returns:
+    list: A list containing the names of African countries.
+    
+    '''
+    url = 'https://api.restcountries.com/countries/v5'
+    params = {"region": "Africa",
+              "limit" : 100}
+    response = requests.get(url, params=params, headers={'Authorization': 'Bearer rc_live_287ae90a8f41440ebe3a8980e3b4ac73'})
+    if response.status_code != 200:
+        print("Error fetching data from API")
+        exit()
+    african_countries_data = response.json()
+    african_countries_list = []
+    for country_info in african_countries_data["data"]["objects"]:
+        country_name = country_info["names"]["common"]
+        african_countries_list.append(country_name)
+    return african_countries_list
+
+
 def main():
     while True:
         print('''
@@ -111,7 +157,14 @@ def main():
             country2 = input("Enter the name of the second country: ").lower()
             compare_countries(country1, country2)
         elif option == '3':
-            pass
+            african_countries = get_african_countries()
+            print(f'''
+        =====================================
+                AFRICAN COUNTRIES
+        =====================================
+            ''')
+            for country in african_countries:
+                print(f"{country}")
         elif option == '4':
             pass
         elif option == '5':
