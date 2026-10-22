@@ -21,8 +21,6 @@ def get_country_info(country):
     elif response.status_code == 200:
         print("Data fetched successfully")
     country_data = response.json()
-    print(response.url)
-    print(json.dumps(country_data, indent=4))
     if not country_data["data"]["objects"]:
         return {"Error": "Country not found"}
     country_info = country_data["data"]["objects"][0]
@@ -128,6 +126,20 @@ def get_african_countries():
         african_countries_list.append(country_name)
     return african_countries_list
 
+def get_country_by_region(region):
+    url = 'https://api.restcountries.com/countries/v5'
+    params = {"region": region,
+              "limit" : 100}
+    response = requests.get(url, params=params, headers={'Authorization': 'Bearer REMOVED_API_KEY'})
+    if response.status_code != 200:
+        print("Error fetching data from API")
+        exit()
+    countries_data = response.json()
+    countries_list = []
+    for country_info in countries_data["data"]["objects"]:
+        country_name = country_info["names"]["common"]
+        countries_list.append(country_name)
+    return countries_list
 
 def main():
     while True:
@@ -163,10 +175,21 @@ def main():
                 AFRICAN COUNTRIES
         =====================================
             ''')
-            for country in african_countries:
-                print(f"{country}")
+            for num, country in enumerate(african_countries, start=1):
+                print(f"{num}) {country}")
         elif option == '4':
-            pass
+            print('''Enter the region you want to see list of countries.
+                NOTE: Available regions are Africa, Americas, Europe, Oceania, Asia: ''')
+            region = input().capitalize()
+            countries = get_country_by_region(region)
+
+            print(f'''
+        =====================================
+                COUNTRIES IN {region}
+        =====================================
+            ''')
+            for num, country in enumerate(countries, start=1):
+                print(f"{num}) {country}")
         elif option == '5':
             print("Exiting...")
             break
