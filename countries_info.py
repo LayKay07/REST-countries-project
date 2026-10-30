@@ -24,7 +24,6 @@ def get_country_info(country):
         response = requests.get(url, params=params, headers={'Authorization': f'Bearer {API_KEY}'}, timeout=10)
         response.raise_for_status()  # Raise an exception for HTTP errors
         if response.status_code == 200:
-            print("Data fetched successfully")
             country_data = response.json()
         else:
             print("Error fetching data from API")
@@ -137,7 +136,6 @@ def get_country_by_region(region):
     try:
         response = requests.get(url, params=params, headers={'Authorization': f'Bearer {API_KEY}'}, timeout=10)
         if response.status_code == 200:
-            print("Data fetched successfully")
             countries_data = response.json()
         else:
             print("Error fetching data from API")
