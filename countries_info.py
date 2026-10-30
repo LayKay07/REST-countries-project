@@ -1,4 +1,9 @@
-import requests, json
+import os
+import requests
+from dotenv import load_dotenv
+import json
+
+load_dotenv()
 
 def get_country_info(country):
     '''
@@ -12,27 +17,37 @@ def get_country_info(country):
     
     '''
 
+    API_KEY = os.getenv("REST_COUNTRIES_API_KEY")
     url = 'https://api.restcountries.com/countries/v5'
     params = {"q": country}
-    response = requests.get(url, params=params, headers={'Authorization': 'Bearer rc_live_287ae90a8f41440ebe3a8980e3b4ac73'})
-    if response.status_code != 200:
-        print("Error fetching data from API")
-        exit()
-    elif response.status_code == 200:
-        print("Data fetched successfully")
-    country_data = response.json()
+    try:
+        response = requests.get(url, params=params, headers={'Authorization': f'Bearer {API_KEY}'}, timeout=10)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        if response.status_code == 200:
+            print("Data fetched successfully")
+            country_data = response.json()
+        else:
+            print("Error fetching data from API")
+    except requests.RequestException as error:
+        print(f"Error fetching data from API: {error}")
     if not country_data["data"]["objects"]:
         return {"Error": "Country not found"}
     country_info = country_data["data"]["objects"][0]
+    capitals = country_info.get("capitals") or []
+    capital = capitals[0]["name"] if capitals else "N/A"
+    currencies = country_info.get("currencies") or []
+    currency = currencies[0]["name"] if currencies else "N/A"
+    currency_symbol = currencies[0]["symbol"] if currencies else "N/A"
+
     country_dict = {
             "Country Name": country_info["names"]["common"],
             "Official Name": country_info["names"]["official"],
-            "Capital": country_info["capitals"][0]["name"],
+            "Capital": capital,
             "Region": country_info["region"],
             "Population": country_info["population"],
             "Area": country_info["area"]["kilometers"],
-            "Currency": country_info["currencies"][0]["name"],
-            "Currency Symbol": country_info["currencies"][0]["symbol"],
+            "Currency": currency,
+            "Currency Symbol": currency_symbol,
             "Languages": [language["name"] for language in country_info["languages"]]}
     return country_dict
 
@@ -104,6 +119,36 @@ def compare_countries(country1, country2):
     else:
         print(f"\nBoth countries have the same area.")
 
+def get_country_by_region(region):
+    '''
+    Fetches a list of countries from a specified region using the REST Countries API.
+    
+    Parameters:
+    region (str): The name of the region to fetch countries from.       
+
+    Returns:
+    list: A list containing the names of countries in the specified region.
+    '''
+
+    API_KEY = os.getenv("REST_COUNTRIES_API_KEY")
+    url = 'https://api.restcountries.com/countries/v5'
+    params = {"region": region,
+              "limit" : 100}
+    try:
+        response = requests.get(url, params=params, headers={'Authorization': f'Bearer {API_KEY}'}, timeout=10)
+        if response.status_code == 200:
+            print("Data fetched successfully")
+            countries_data = response.json()
+        else:
+            print("Error fetching data from API")
+    except requests.RequestException as error:
+        print(f"Error fetching data from API: {error}")
+    countries_list = []
+    for country_info in countries_data["data"]["objects"]:
+        country_name = country_info["names"]["common"]
+        countries_list.append(country_name)
+    return countries_list
+
 def get_african_countries():
     '''
     Fetches a list of African countries from the REST Countries API.
@@ -112,34 +157,7 @@ def get_african_countries():
     list: A list containing the names of African countries.
     
     '''
-    url = 'https://api.restcountries.com/countries/v5'
-    params = {"region": "Africa",
-              "limit" : 100}
-    response = requests.get(url, params=params, headers={'Authorization': 'Bearer rc_live_287ae90a8f41440ebe3a8980e3b4ac73'})
-    if response.status_code != 200:
-        print("Error fetching data from API")
-        exit()
-    african_countries_data = response.json()
-    african_countries_list = []
-    for country_info in african_countries_data["data"]["objects"]:
-        country_name = country_info["names"]["common"]
-        african_countries_list.append(country_name)
-    return african_countries_list
-
-def get_country_by_region(region):
-    url = 'https://api.restcountries.com/countries/v5'
-    params = {"region": region,
-              "limit" : 100}
-    response = requests.get(url, params=params, headers={'Authorization': 'Bearer rc_live_287ae90a8f41440ebe3a8980e3b4ac73'})
-    if response.status_code != 200:
-        print("Error fetching data from API")
-        exit()
-    countries_data = response.json()
-    countries_list = []
-    for country_info in countries_data["data"]["objects"]:
-        country_name = country_info["names"]["common"]
-        countries_list.append(country_name)
-    return countries_list
+    return get_country_by_region("Africa")
 
 def main():
     while True:
@@ -158,15 +176,15 @@ def main():
     ''')
         option = input()
         if option == '1':
-            country = input("Enter the name of the country: ").lower()
+            country = input("Enter the name of the country: ").strip().lower()
             country_info = get_country_info(country)
             if "Error" in country_info:
                 print(country_info["Error"])
             else:
                 display_country_info(country_info)
         elif option == '2':
-            country1 = input("Enter the name of the first country: ").lower()
-            country2 = input("Enter the name of the second country: ").lower()
+            country1 = input("Enter the name of the first country: ").strip().lower()
+            country2 = input("Enter the name of the second country: ").strip().lower()
             compare_countries(country1, country2)
         elif option == '3':
             african_countries = get_african_countries()
@@ -180,7 +198,7 @@ def main():
         elif option == '4':
             print('''Enter the region you want to see list of countries.
                 NOTE: Available regions are Africa, Americas, Europe, Oceania, Asia: ''')
-            region = input().capitalize()
+            region = input().strip().capitalize()
             countries = get_country_by_region(region)
 
             print(f'''
